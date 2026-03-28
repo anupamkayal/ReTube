@@ -120,7 +120,7 @@ def _innertube_get_stream(video_id, quality=None):
                     "context": {
                         "client": {
                             "clientName": client_name,
-                            "clientVersion": "21.05.46",
+                            "clientVersion": "19.11.35",
                             "visitorData": VISITOR_DATA, # CRITICAL FOR GUEST MODE
                         },
                          "serviceIntegrityDimensions": {
