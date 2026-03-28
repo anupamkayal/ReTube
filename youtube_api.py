@@ -62,7 +62,7 @@ def _innertube_get_stream(video_id, quality=None):
     print(f"PoToken: {yt.po_token}")
     print(f"VisitorData: {yt.visitor_data}")
 
-    PO_TOKEN = yt.po_token
+    PO_TOKEN = "MnjGxQIIPDT8Wcb5Uuyi6bS0qfSaZpfO16DhnsZjywjOAqMD1ICiQC3De7k3eb35lx0ieiliAAXws6Ixc-HZ0cCAYFP-Rmr47BIpEvR2Pnhqo5G-0o8ql8sBVqVecg3m23I2IDALEWbppqYyGLFiAmx1my9fLLXw2e8="
     VISITOR_DATA = yt.visitor_data
     for client_name in ("ANDROID_TESTSUITE", "ANDROID_UNPLUGGED", "ANDROID_LITE", "ANDROID", "IOS"):
         try:
@@ -78,6 +78,7 @@ def _innertube_get_stream(video_id, quality=None):
                         "client": {
                             "clientName": client_name,
                             "clientVersion": "21.05.46",
+                            "serviceIntegrityDimensions" : PO_TOKEN
                             "visitorData": VISITOR_DATA, # CRITICAL FOR GUEST MODE
                         },
                         
