@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- PWA Settings -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#0f0f0f">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
+    <title>{% block title %}YouTube Vanced{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Default Dark Theme */
+            --yt-bg: #0f0f0f;
+            --yt-spec-text-primary: #fff;
+            --yt-spec-text-secondary: #aaa;
+            --yt-spec-call-to-action: #3ea6ff;
+            --yt-spec-badge-chip-background: #272727;
+            --yt-spec-10-percent-layer: rgba(255, 255, 255, 0.1);
+            --yt-searchbox-bg: #121212;
+            --yt-searchbox-border: #303030;
+        }
+
+        :root[data-theme="light"] {
+            --yt-bg: #ffffff;
+            --yt-spec-text-primary: #0f0f0f;
+            --yt-spec-text-secondary: #606060;
+            --yt-spec-call-to-action: #065fd4;
+            --yt-spec-badge-chip-background: #f2f2f2;
+            --yt-spec-10-percent-layer: rgba(0, 0, 0, 0.05);
+            --yt-searchbox-bg: #ffffff;
+            --yt-searchbox-border: #cccccc;
+        }
+
+        html,
+        body {
+            overflow-x: hidden;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background-color: var(--yt-bg);
+            color: var(--yt-spec-text-primary);
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        svg {
+            fill: currentColor;
+        }
+
+        /* == DESKTOP HEADER == */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            background-color: var(--yt-bg);
+            z-index: 100;
+            width: 100%;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .menu-btn {
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 50%;
+            display: flex;
+        }
+
+        .menu-btn:hover {
+            background: var(--yt-spec-10-percent-layer);
+        }
+
+        .menu-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: -1px;
+        }
+
+        .vanced-badge {
+            background: var(--yt-spec-call-to-action);
+            color: #000;
+            font-size: 10px;
+            padding: 2px 4px;
+            border-radius: 2px;
+            margin-top: -12px;
+            margin-left: -5px;
+            font-weight: 500;
+        }
+
+        .header-center {
+            flex: 1;
+            max-width: 720px;
+            display: flex;
+            align-items: center;
+            margin: 0 40px;
+        }
+
+        .search-box {
+            display: flex;
+            flex: 1;
+            height: 40px;
+        }
+
+        .search-input {
+            flex: 1;
+            background: var(--yt-searchbox-bg);
+            border: 1px solid var(--yt-searchbox-border);
+            border-right: none;
+            border-radius: 40px 0 0 40px;
+            padding: 0 16px;
+            color: var(--yt-spec-text-primary);
+            font-size: 16px;
+            outline: none;
+            width: 100%;
+        }
+
+        .search-input:focus {
+            border: 1px solid #1c62b9;
+        }
+
+        .search-btn {
+            background: #222222;
+            border: 1px solid var(--yt-searchbox-border);
+            border-radius: 0 40px 40px 0;
+            padding: 0 20px;
+            width: 64px;
+            cursor: pointer;
+            color: var(--yt-spec-text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-btn:hover {
+            background: #303030;
+        }
+
+        .search-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .action-icon {
+            padding: 8px;
+            cursor: pointer;
+            display: flex;
+            border-radius: 50%;
+        }
+
+        .action-icon:hover {
+            background: var(--yt-spec-10-percent-layer);
+        }
+
+        .action-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .avatar-wrap {
+            padding: 0 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #005a9c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .login-btn-header {
+            border: 1px solid var(--yt-searchbox-border);
+            padding: 6px 16px;
+            border-radius: 20px;
+            color: var(--yt-spec-call-to-action);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .login-btn-header:hover {
+            background: rgba(62, 166, 255, 0.1);
+            border-color: transparent;
+        }
+
+        /* Default states for mobile elements (Hidden on desktop) */
+        .mobile-search-btn {
+            display: none;
+        }
+
+        .mobile-back-btn {
+            display: none;
+        }
+
+        /* == MOBILE HEADER & LAYOUT == */
+        @media (max-width: 768px) {
+            .header-center {
+                display: none;
+            }
+
+            .header.mobile-search-active .header-center {
+                display: flex;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: var(--yt-bg);
+                z-index: 200;
+                margin: 0;
+                padding: 0 12px;
+                align-items: center;
+            }
+
+            .header.mobile-search-active .header-left,
+            .header.mobile-search-active .header-right {
+                display: none;
+            }
+
+            .mobile-search-btn {
+                display: flex;
+            }
+
+            .mobile-back-btn {
+                display: flex;
+                margin-right: 8px;
+                padding: 8px;
+                cursor: pointer;
+                background: transparent;
+                border: none;
+                color: var(--yt-spec-text-primary);
+                align-items: center;
+            }
+
+            .mobile-back-btn svg {
+                width: 24px;
+                height: 24px;
+                fill: var(--yt-spec-text-primary);
+            }
+
+            .menu-btn {
+                display: none;
+            }
+
+            .header {
+                padding: 0 12px;
+                height: 48px;
+                border-bottom: 1px solid var(--yt-searchbox-border);
+            }
+
+            .header-right .action-icon {
+                padding: 8px;
+            }
+
+            .action-icon.create-btn {
+                display: none;
+            }
+        }
+
+        .main-container {
+            display: flex;
+            margin-top: 56px;
+            min-height: calc(100vh - 56px);
+            width: 100%;
+        }
+
+        .sidebar {
+            width: 72px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: var(--yt-bg);
+            padding-top: 4px;
+            position: fixed;
+            height: calc(100vh - 56px);
+            overflow-y: auto;
+        }
+
+        .sidebar-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            color: var(--yt-spec-text-primary);
+            font-size: 10px;
+            width: 64px;
+            padding: 16px 0;
+            border-radius: 10px;
+        }
+
+        .sidebar-item:hover {
+            background: var(--yt-spec-badge-chip-background);
+        }
+
+        .sidebar-item svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                margin-top: 48px;
+                height: auto;
+                padding-bottom: 48px;
+            }
+
+            .sidebar {
+                display: none;
+            }
+        }
+
+        .content {
+            flex: 1;
+            margin-left: 72px;
+            padding: 24px;
+            background: var(--yt-bg);
+            width: calc(100% - 72px);
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                margin-left: 0;
+                padding: 12px 0 48px 0;
+                width: 100%;
+            }
+        }
+
+        /* == MOBILE BOTTOM NAV == */
+        .bottom-nav {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .bottom-nav {
+                display: flex;
+                justify-content: space-around;
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+                height: 48px;
+                background-color: var(--yt-bg);
+                border-top: 1px solid var(--yt-searchbox-border);
+                z-index: 100;
+                align-items: center;
+            }
+
+            .bottom-nav-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                color: var(--yt-spec-text-primary);
+                font-size: 10px;
+                width: 20%;
+                height: 100%;
+                cursor: pointer;
+            }
+
+            .bottom-nav-item svg {
+                width: 24px;
+                height: 24px;
+                margin-bottom: 2px;
+            }
+
+            .bottom-nav-item.active {
+                font-weight: bold;
+            }
+
+            .bottom-nav-plus svg {
+                width: 32px;
+                height: 32px;
+                stroke: var(--yt-spec-text-primary);
+                stroke-width: 1;
+                fill: transparent;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+    <script>
+        // Apply theme early to prevent flash
+        const savedTheme = localStorage.getItem('vancedTheme') || 'dark';
+        if (savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker Registered'))
+                    .catch(err => console.log('Service Worker Error', err));
+            });
+        }
+    </script>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-left">
+            <div class="menu-btn">
+                <svg viewBox="0 0 24 24">
+                    <path d="M21,6H3V5h18V6z M21,11H3v1h18V11z M21,17H3v1h18V17z"></path>
+                </svg>
+            </div>
+            <a href="{{ url_for('main.index') }}" class="logo">
+                <span style="font-size: 20px; letter-spacing: -1px; font-weight: 700;">YouTube</span>
+                <span class="vanced-badge">VANCED</span>
+            </a>
+        </div>
+
+        <div class="header-center">
+            <button type="button" class="mobile-back-btn" id="mobile-back-btn">
+                <svg viewBox="0 0 24 24">
+                    <path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"></path>
+                </svg>
+            </button>
+            <form class="search-box" action="{{ url_for('main.search') }}" method="POST">
+                <input type="text" class="search-input" name="query" placeholder="Search"
+                    value="{{ request.form.get('query') or request.args.get('query') or '' }}">
+                <button type="submit" class="search-btn">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M20.87,20.17l-5.59-5.59C16.35,13.35,17,11.75,17,10c0-3.87-3.13-7-7-7s-7,3.13-7,7s3.13,7,7,7c1.75,0,3.35-0.65,4.58-1.71 l5.59,5.59L20.87,20.17z M10,16c-3.31,0-6-2.69-6-6s2.69-6,6-6s6,2.69,6,6S13.31,16,10,16z">
+                        </path>
+                    </svg>
+                </button>
+            </form>
+        </div>
+
+        <div class="header-right">
+            <!-- Mobile Search Toggle -->
+            <div class="action-icon mobile-search-btn" id="mobile-search-expand" title="Search">
+                <svg viewBox="0 0 24 24">
+                    <path
+                        d="M20.87,20.17l-5.59-5.59C16.35,13.35,17,11.75,17,10c0-3.87-3.13-7-7-7s-7,3.13-7,7s3.13,7,7,7c1.75,0,3.35-0.65,4.58-1.71 l5.59,5.59L20.87,20.17z M10,16c-3.31,0-6-2.69-6-6s2.69-6,6-6s6,2.69,6,6S13.31,16,10,16z">
+                    </path>
+                </svg>
+            </div>
+            <!-- Theme Toggle -->
+            <div class="action-icon" id="theme-toggle" title="Toggle Theme" style="margin-right: 8px;">
+                <svg viewBox="0 0 24 24">
+                    <path
+                        d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z" />
+                </svg>
+            </div>
+
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('video.upload') }}" class="action-icon create-btn" title="Create">
+                <svg viewBox="0 0 24 24">
+                    <path
+                        d="M14,13h-3v3H9v-3H6v-2h3V8h2v3h3V13z M17,6H3v12h14v-6.39l4,3.18V8.21l-4,3.18V6z M16,17H4V7h12V17z">
+                    </path>
+                </svg>
+            </a>
+            <div class="avatar-wrap">
+                <div class="avatar" title="{{ current_user.username }}">{{ current_user.username[0] | upper }}</div>
+            </div>
+            <a href="{{ url_for('auth.logout') }}"
+                style="font-size: 14px; margin-left:8px; color:var(--yt-spec-text-secondary);">Logout</a>
+            {% else %}
+            <a href="{{ url_for('auth.login') }}" class="login-btn-header">
+                <svg style="width: 24px; height: 24px; fill: currentColor;" viewBox="0 0 24 24">
+                    <path
+                        d="M12,2A10,10,0,1,0,22,12,10.011,10.011,0,0,0,12,2ZM12,6a3,3,0,1,1-3,3A3,3,0,0,1,12,6Zm0,14.2A7.2,7.2,0,0,1,6,16c0-2.6,4-3.5,6-3.5s6,.9,6,3.5A7.2,7.2,0,0,1,12,20.2Z" />
+                </svg>
+                Sign in
+            </a>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="main-container">
+        {% block sidebar %}
+        <aside class="sidebar">
+            <a href="{{ url_for('main.index') }}" class="sidebar-item">
+                <svg viewBox="0 0 24 24">
+                    <path d="M4,21V10.08l8-6.96l8,6.96V21h-6v-6h-4v6H4z M5,20h2v-6h10v6h2V10.7l-7-6.09L5,10.7V20z">
+                    </path>
+                </svg>
+                <span>Home</span>
+            </a>
+            <div class="sidebar-item">
+                <svg viewBox="0 0 24 24">
+                    <path
+                        d="M17.73,12.02l-3.98-1.53c0.11-0.34,0.18-0.71,0.18-1.09c0-1.92-1.55-3.48-3.46-3.48c-1.32,0-2.47,0.75-3.05,1.84 l3.98,1.53c-0.11,0.34-0.18,0.71-0.18,1.09c0,1.92,1.55,3.48,3.46,3.48C15.99,13.86,17.15,13.11,17.73,12.02z M10,14.65v-5.3L15,12 L10,14.65z">
+                    </path>
+                </svg>
+                <span>Shorts</span>
+            </div>
+            <div class="sidebar-item">
+                <svg viewBox="0 0 24 24">
+                    <path d="M20,7H4V6h16V7z M22,9v12H2V9H22z M15,15l-5-3v6L15,15z M17,3H7v1h10V3z"></path>
+                </svg>
+                <span>Subscriptions</span>
+            </div>
+        </aside>
+        {% endblock %}
+
+        <main class="content">
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <ul
+                style="list-style:none; padding:10px; background:#ca3c3c; color:white; border-radius:8px; margin-bottom:16px;">
+                {% for message in messages %}
+                <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- MOBILE BOTTOM NAVIGATION -->
+    <nav class="bottom-nav">
+        <a href="{{ url_for('main.index') }}" class="bottom-nav-item active">
+            <svg viewBox="0 0 24 24">
+                <path d="M4,21V10.08l8-6.96l8,6.96V21h-6v-6h-4v6H4z"></path>
+            </svg>
+            <span>Home</span>
+        </a>
+        <div class="bottom-nav-item">
+            <svg viewBox="0 0 24 24">
+                <path
+                    d="M17.73,12.02l-3.98-1.53c0.11-0.34,0.18-0.71,0.18-1.09c0-1.92-1.55-3.48-3.46-3.48c-1.32,0-2.47,0.75-3.05,1.84 l3.98,1.53c-0.11,0.34-0.18,0.71-0.18,1.09c0,1.92,1.55,3.48,3.46,3.48C15.99,13.86,17.15,13.11,17.73,12.02z M10,14.65v-5.3L15,12 L10,14.65z">
+                </path>
+            </svg>
+            <span>Shorts</span>
+        </div>
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('video.upload') }}" class="bottom-nav-item bottom-nav-plus">
+            <svg viewBox="0 0 24 24">
+                <path d="M12,2A10,10,0,1,0,22,12,10.011,10.011,0,0,0,12,2Zm5,11H13v4H11V13H7V11h4V7h2v4h4Z"></path>
+            </svg>
+        </a>
+        {% else %}
+        <a href="{{ url_for('auth.login') }}" class="bottom-nav-item bottom-nav-plus">
+            <svg viewBox="0 0 24 24">
+                <path d="M12,2A10,10,0,1,0,22,12,10.011,10.011,0,0,0,12,2Zm5,11H13v4H11V13H7V11h4V7h2v4h4Z"></path>
+            </svg>
+        </a>
+        {% endif %}
+        <div class="bottom-nav-item">
+            <svg viewBox="0 0 24 24">
+                <path d="M20,7H4V6h16V7z M22,9v12H2V9H22z M15,15l-5-3v6L15,15z"></path>
+            </svg>
+            <span>Subscriptions</span>
+        </div>
+        <div class="bottom-nav-item">
+            <svg viewBox="0 0 24 24">
+                <path d="M11,7l6,3.5L11,14V7z M18,20H4V6H3v15h15V20z"></path>
+            </svg>
+            <span>Library</span>
+        </div>
+    </nav>
+
+    <script>
+        // Theme Toggle Logic
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        if (themeToggleBtn) {
+            themeToggleBtn.addEventListener('click', () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('vancedTheme', newTheme);
+            });
+        }
+
+        // Mobile Search Toggle Logic
+        const mobileSearchBtn = document.getElementById('mobile-search-expand');
+        const mobileBackBtn = document.getElementById('mobile-back-btn');
+        const header = document.querySelector('.header');
+        const searchInput = document.querySelector('.search-input');
+
+        if (mobileSearchBtn && mobileBackBtn && header) {
+            mobileSearchBtn.addEventListener('click', () => {
+                header.classList.add('mobile-search-active');
+                if (searchInput) {
+                    setTimeout(() => searchInput.focus(), 100);
+                }
+            });
+
+            mobileBackBtn.addEventListener('click', () => {
+                header.classList.remove('mobile-search-active');
+            });
+        }
+    </script>
+</body>
+
+</html>

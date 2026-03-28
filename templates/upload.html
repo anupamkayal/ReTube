@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% block title %}Upload Video - YouTube Vanced{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-container {
+        display: flex;
+        justify-content: center;
+        padding-top: 40px;
+    }
+
+    .upload-box {
+        background: #121212;
+        border: 1px solid var(--yt-searchbox-border);
+        border-radius: 8px;
+        padding: 40px;
+        width: 100%;
+        max-width: 600px;
+    }
+
+    .upload-title {
+        font-size: 24px;
+        font-weight: 500;
+        margin-bottom: 24px;
+        border-bottom: 1px solid var(--yt-searchbox-border);
+        padding-bottom: 16px;
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 14px;
+        color: #aaa;
+        font-weight: 500;
+    }
+
+    .form-control {
+        width: 100%;
+        background: transparent;
+        border: 1px solid var(--yt-searchbox-border);
+        border-radius: 4px;
+        padding: 12px;
+        color: white;
+        font-size: 16px;
+        outline: none;
+    }
+
+    .form-control:focus {
+        border-color: var(--yt-spec-call-to-action);
+    }
+
+    textarea.form-control {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    .file-input-wrapper {
+        border: 2px dashed #303030;
+        padding: 40px;
+        text-align: center;
+        border-radius: 8px;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .file-input-wrapper:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .file-input {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .upload-icon {
+        width: 48px;
+        height: 48px;
+        color: #aaa;
+        margin-bottom: 16px;
+    }
+
+    .upload-submit {
+        background: var(--yt-spec-call-to-action);
+        color: #000;
+        border: none;
+        border-radius: 4px;
+        padding: 12px 24px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        float: right;
+    }
+
+    .upload-submit:hover {
+        background: #65b8ff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="upload-container">
+    <div class="upload-box">
+        <h2 class="upload-title">Upload Video</h2>
+
+        <form action="{{ url_for('video.upload') }}" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <div class="file-input-wrapper">
+                    <svg class="upload-icon" viewBox="0 0 24 24">
+                        <path
+                            d="M14,13h-3v3H9v-3H6v-2h3V8h2v3h3V13z M17,6H3v12h14v-6.39l4,3.18V8.21l-4,3.18V6z M16,17H4V7h12V17z">
+                        </path>
+                    </svg>
+                    <div>Drag and drop a video file to upload, or click to select</div>
+                    <div style="font-size: 12px; color: #777; margin-top: 8px;">Supports MP4, WebM, MKV</div>
+                    <input type="file" name="video" class="file-input" required accept="video/*"
+                        onchange="document.getElementById('filename-display').innerText = this.files[0].name;">
+                </div>
+                <div id="filename-display"
+                    style="margin-top: 12px; color: var(--yt-spec-call-to-action); font-size: 14px;"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Title (required)</label>
+                <input type="text" name="title" class="form-control" placeholder="Video title" required>
+            </div>
+
+            <div class="form-group">
+                <label>Description</label>
+                <textarea name="description" class="form-control"
+                    placeholder="Tell viewers about your video"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Custom Thumbnail (optional)</label>
+                <input type="file" name="thumbnail" accept="image/*" class="form-control"
+                    style="border: none; padding-left: 0;">
+                <div style="font-size: 12px; color: #777; margin-top: 4px;">If not provided, the server will try to
+                    auto-generate one from the video.</div>
+            </div>
+
+            <button type="submit" class="upload-submit">Publish Video</button>
+            <div style="clear: both;"></div>
+        </form>
+    </div>
+</div>
+{% endblock %}

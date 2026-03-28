@@ -1,0 +1,1215 @@
+{% extends 'base.html' %}
+{% block title %}{{ video.title }} - YouTube Vanced{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* PAGE SPECIFIC OVERRIDES */
+    .main-container {
+        margin-top: 56px;
+    }
+
+    .sidebar {
+        display: none;
+    }
+
+    /* Hide global sidebar and mobile bottom nav for player page */
+    .content {
+        margin-left: 0;
+        padding: 0;
+        padding-top: 24px;
+        background: var(--yt-bg);
+    }
+
+    @media (max-width: 768px) {
+        .bottom-nav {
+            display: none !important;
+        }
+    }
+
+    .page-container {
+        display: flex;
+        justify-content: center;
+        padding: 0 24px 24px 24px;
+        gap: 24px;
+        max-width: 1750px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .main-col {
+        flex: 1;
+        max-width: 1280px;
+    }
+
+    .side-col {
+        width: 400px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    /* CUSTOM VIDEO PLAYER UI */
+    .video-wrapper {
+        width: 100%;
+        aspect-ratio: 16/9;
+        background: #000;
+        border-radius: 12px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    video {
+        width: 100%;
+        height: 100%;
+        outline: none;
+    }
+
+    /* Vanced Specific UI Elements Overlay */
+    .vanced-controls {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        gap: 8px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 10;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 4px 8px;
+        border-radius: 8px;
+    }
+
+    .video-wrapper:hover .vanced-controls,
+    .vanced-controls.active {
+        opacity: 1;
+    }
+
+    .v-ctrl-btn {
+        background: transparent;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px;
+        border-radius: 4px;
+    }
+
+    .v-ctrl-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .v-ctrl-btn svg {
+        width: 18px;
+        height: 18px;
+        fill: white;
+    }
+
+    /* Auto-Skip Toast */
+    .skip-toast {
+        position: absolute;
+        bottom: 60px;
+        right: 20px;
+        background: var(--yt-spec-call-to-action);
+        color: #000;
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 14px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+        z-index: 20;
+    }
+
+    /* META SECTION */
+    .title {
+        margin-top: 12px;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--yt-spec-text-primary);
+        word-wrap: break-word;
+        line-height: 28px;
+    }
+
+    .primary-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 12px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .channel-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .channel-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #005a9c;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        font-weight: bold;
+        overflow: hidden;
+        color: white;
+    }
+
+    .channel-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .channel-name {
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--yt-spec-text-primary);
+    }
+
+    .subscribers {
+        font-size: 12px;
+        color: var(--yt-spec-text-secondary);
+    }
+
+    .subscribe-btn {
+        background: #f1f1f1;
+        color: #0f0f0f;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 20px;
+        font-weight: 500;
+        font-size: 14px;
+        cursor: pointer;
+        margin-left: 12px;
+    }
+
+    .action-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        overflow-x: auto;
+    }
+
+    .action-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--yt-spec-badge-chip-background);
+        color: var(--yt-spec-text-primary);
+        border: none;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 500;
+        font-size: 14px;
+        cursor: pointer;
+        white-space: nowrap;
+        text-decoration: none;
+    }
+
+    .action-btn:hover {
+        background: #3f3f3f;
+    }
+
+    .like-dislike {
+        display: flex;
+        align-items: center;
+        background: var(--yt-spec-badge-chip-background);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+
+    .like-btn,
+    .dislike-btn {
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        color: var(--yt-spec-text-primary);
+        font-weight: 500;
+        font-size: 14px;
+        border: none;
+        background: transparent;
+    }
+
+    .like-btn {
+        border-right: 1px solid #3f3f3f;
+    }
+
+    .like-btn:hover,
+    .dislike-btn:hover {
+        background: #3f3f3f;
+    }
+
+    .like-btn.active {
+        color: var(--yt-spec-call-to-action);
+    }
+
+    .description-box {
+        background: var(--yt-spec-badge-chip-background);
+        border-radius: 12px;
+        padding: 12px;
+        margin-top: 24px;
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--yt-spec-text-primary);
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .description-box:hover {
+        background: #3f3f3f;
+    }
+
+    .desc-views {
+        font-weight: 700;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    .desc-text {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: pre-wrap;
+    }
+
+    /* SIDE COL ITEMS */
+    .rel-card {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        padding-right: 4px;
+        transition: background 0.2s;
+    }
+
+    .rel-card:hover {
+        background: var(--yt-spec-badge-chip-background);
+    }
+
+    .rel-thumb {
+        width: 168px;
+        height: 94px;
+        background: #222;
+        border-radius: 8px;
+        flex-shrink: 0;
+        position: relative;
+    }
+
+    .rel-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+
+    /* COMMENTS SECTION */
+    .comments-section {
+        margin-top: 24px;
+    }
+
+    .comments-header {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 24px;
+    }
+
+    .comment-input-row {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+
+    .comment-input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid #3f3f3f;
+        color: white;
+        font-size: 14px;
+        outline: none;
+        padding-bottom: 4px;
+    }
+
+    .comment-input:focus {
+        border-bottom: 2px solid white;
+    }
+
+    .comment-submit {
+        background: var(--yt-spec-call-to-action);
+        color: #000;
+        border: none;
+        border-radius: 16px;
+        padding: 8px 16px;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .comment-thread {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .comment-content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .comment-author {
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 4px;
+    }
+
+    .comment-author span {
+        font-weight: 400;
+        color: #aaa;
+        font-size: 12px;
+        margin-left: 4px;
+    }
+
+    .comment-text {
+        font-size: 14px;
+        line-height: 20px;
+    }
+
+    @media (max-width: 1000px) {
+        .page-container {
+            flex-direction: column;
+            padding: 0;
+            padding-bottom: 24px;
+            gap: 0;
+        }
+
+        .video-wrapper {
+            border-radius: 0;
+            position: sticky;
+            top: 48px;
+            z-index: 50;
+        }
+
+        .side-col {
+            width: 100%;
+            padding: 16px;
+        }
+
+        .content-wrapper {
+            padding: 12px 16px;
+        }
+    }
+
+    /* Vanced Options Menu Popup */
+    .v-menu {
+        position: absolute;
+        top: 40px;
+        right: 10px;
+        background: rgba(28, 28, 28, 0.95);
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 8px 0;
+        display: none;
+        z-index: 100;
+        min-width: 150px;
+    }
+
+    .v-menu.show {
+        display: block;
+    }
+
+    .v-menu-item {
+        padding: 8px 16px;
+        cursor: pointer;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        font-size: 14px;
+    }
+
+    .v-menu-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="main-col">
+        <div class="video-wrapper">
+            <video id="vanced-player" controls autoplay playsinline
+                poster="{{ url_for('video.thumbnail', video_id=video.id) if video.thumbnail_filename else (video.thumbnail_url if video.thumbnail_url else '') }}">
+                {% if is_local %}
+                <source src="{{ url_for('video.stream', video_id=video.id) }}">
+                {% else %}
+                <source src="{{ url_for('video.proxy_stream', url=video.stream_url, vd=video.visitor_data|default('', true)) }}">
+                {% endif %}
+                Your browser does not support HTML5 video.
+            </video>
+            {% if not is_local and video.audio_url %}
+            <audio id="vanced-audio" autoplay hidden></audio>
+            {% else %}
+            <audio id="vanced-audio" autoplay hidden></audio>
+            {% endif %}
+
+            <div class="vanced-controls" id="v-controls">
+                <!-- Quality (Visual Only) -->
+                <button class="v-ctrl-btn" onclick="toggleMenu('q-menu')">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9S16.97,3,12,3z M12,19c-3.86,0-7-3.14-7-7s3.14-7,7-7s7,3.14,7,7S15.86,19,12,19z M12,6c-2.76,0-5,2.24-5,5h2c0-1.65,1.35-3,3-3s3,1.35,3,3c0,1.33-0.78,2.36-1.85,3.14C12.44,14.67,12,15.24,12,16h2c0-1.14,0.61-1.83,1.52-2.48 C16.5,12.8,17,11.95,17,11C17,8.24,14.76,6,12,6z M11,17h2v2h-2V17z" />
+                    </svg>
+                    <span id="current-q">Auto (1080p)</span>
+                </button>
+                <!-- Speed -->
+                <button class="v-ctrl-btn" onclick="toggleMenu('s-menu')">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M10,8v8l6-4L10,8z M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,20c-4.41,0-8-3.59-8-8s3.59-8,8-8s8,3.59,8,8S16.41,20,12,20z" />
+                    </svg>
+                    <span id="current-s">1x</span>
+                </button>
+                <!-- PiP -->
+                <button class="v-ctrl-btn" onclick="togglePiP()" title="Picture in Picture">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19,7h-8v6h8V7z M21,3H3C1.9,3,1,3.9,1,5v14c0,1.1,0.9,2,2,2h18c1.1,0,2-0.9,2-2V5C23,3.9,22.1,3,21,3z M21,19.01H3V4.99h18V19.01z" />
+                    </svg>
+                </button>
+            </div>
+
+            <div id="skip-toast" class="skip-toast">Sponsor Segment Skipped</div>
+
+            <!-- Context Menus -->
+            <div id="q-menu" class="v-menu">
+                <div class="v-menu-item" onclick="setQuality('1080p')">1080p <span>HD</span></div>
+                <div class="v-menu-item" onclick="setQuality('720p')">720p <span>HD</span></div>
+                <div class="v-menu-item" onclick="setQuality('480p')">480p</div>
+                <div class="v-menu-item" onclick="setQuality('360p')">360p</div>
+            </div>
+            <div id="s-menu" class="v-menu">
+                <div class="v-menu-item" onclick="setSpeed(2.0)">2x</div>
+                <div class="v-menu-item" onclick="setSpeed(1.5)">1.5x</div>
+                <div class="v-menu-item" onclick="setSpeed(1.0)">1x (Normal)</div>
+                <div class="v-menu-item" onclick="setSpeed(0.5)">0.5x</div>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <h1 class="title">{{ video.title }}</h1>
+
+            <div class="primary-info">
+                <div class="channel-info">
+                    <a href="{{ url_for('main.channel', username=video.uploader.username) if is_local else '#' }}"
+                        class="channel-avatar" style="text-decoration: none;">
+                        {{ video.uploader.username[0] | upper }}
+                    </a>
+                    <div class="channel-details">
+                        <a href="{{ url_for('main.channel', username=video.uploader.username) if is_local else '#' }}"
+                            class="channel-name" style="text-decoration: none;">
+                            {{ video.uploader.username }}
+                        </a>
+                        <span class="subscribers">Vanced Sub</span>
+                    </div>
+                    <button class="subscribe-btn">Subscribe</button>
+                </div>
+
+                <div class="action-row">
+                    <div class="like-dislike">
+                        <button class="like-btn {% if user_liked %}active{% endif %}" id="like-btn-toggle"
+                            data-video-id="{{ video.id }}">
+                            👍 <span id="like-count">{{ likes_count }}</span>
+                        </button>
+                        <button class="dislike-btn">👎</button>
+                    </div>
+                    <button class="action-btn" onclick="shareVideo()">↪ Share</button>
+                    <!-- Actual Download function via direct reference -->
+                    <a href="{{ url_for('video.stream', video_id=video.id) if is_local else video.stream_url }}"
+                        download="{{ video.filename if video.filename else 'video.mp4' }}" class="action-btn">⬇
+                        Download</a>
+                    <button class="action-btn" onclick="addMockSponsorBlock()">✂ Mock SponsorBlock</button>
+                </div>
+            </div>
+
+            <div class="description-box" onclick="this.style.webkitLineClamp='unset'">
+                <span class="desc-views">{{ video.views }} views • Ad-Free Playback • Background Play Supported</span>
+                <div class="desc-text">{{ video.description }}</div>
+            </div>
+
+            <div class="comments-section">
+                <div class="comments-header">{{ comments|length if is_local else 'Comments Disabled for YouTube' }}
+                </div>
+
+                {% if is_local %}
+                {% if current_user.is_authenticated %}
+                <form action="{{ url_for('video.add_comment', video_id=video.id) }}" method="POST"
+                    class="comment-input-row">
+                    <div class="channel-avatar" style="width: 40px; height: 40px; font-size: 16px;">
+                        {{ current_user.username[0] | upper }}</div>
+                    <div style="flex: 1; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                        <input type="text" name="text" class="comment-input" placeholder="Add a comment..." required>
+                        <button type="submit" class="comment-submit">Comment</button>
+                    </div>
+                </form>
+                {% else %}
+                <div style="color: #aaa; margin-bottom: 24px;">
+                    <a href="{{ url_for('auth.login') }}" style="color: var(--yt-spec-call-to-action)">Sign in</a> to
+                    add a comment.
+                </div>
+                {% endif %}
+                {% endif %}
+
+                {% for comment in comments %}
+                <div class="comment-thread">
+                    <a href="{{ url_for('main.channel', username=comment.user.username) }}" class="channel-avatar"
+                        style="width: 40px; height: 40px; font-size: 16px; text-decoration: none;">
+                        {{ comment.user.username[0] | upper }}
+                    </a>
+                    <div class="comment-content">
+                        <div class="comment-author">
+                            <a href="{{ url_for('main.channel', username=comment.user.username) }}"
+                                style="text-decoration: none;">@{{ comment.user.username }}</a>
+                            <span>{{ comment.created_at.strftime('%Y-%m-%d') }}</span>
+                        </div>
+                        <div class="comment-text">{{ comment.text }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- SIDEBAR RELATED VIDEOS -->
+    <div class="side-col">
+        <div style="font-size:16px; font-weight:bold; margin-bottom:8px;">Recommended</div>
+
+        {% for rel_vid in related_videos %}
+        <a href="{{ url_for('video.play', v=rel_vid.id) }}" class="rel-card">
+            <div class="rel-thumb">
+                <img
+                    src="{{ url_for('video.thumbnail', video_id=rel_vid.id) if rel_vid.thumbnail_filename else (rel_vid.thumbnail_url if rel_vid.thumbnail_url else 'https://via.placeholder.com/168x94/222222/555555?text=Processing') }}">
+            </div>
+            <div style="display:flex; flex-direction:column; padding-top: 2px;">
+                <span
+                    style="font-size:14px; font-weight:500; color:#f1f1f1; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height: 20px; margin-bottom: 4px;">{{
+                    rel_vid.title }}</span>
+                <span style="font-size:12px; color:#aaaaaa; display: flex; align-items: center;">{{
+                    rel_vid.uploader.username }}
+                    <span
+                        style="font-size: 10px; margin-left: 4px; color: #aaaaaa; background: #333; padding: 2px 4px; border-radius: 4px; font-weight: bold;">Ad-Free</span>
+                </span>
+                <span style="font-size:12px; color:#aaaaaa;">{{ rel_vid.views }} views</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- HIDDEN DATA FOR JAVASCRIPT -->
+<div id="video-data" data-is-authenticated="{{ 'true' if current_user.is_authenticated else 'false' }}"
+    data-login-url="{{ url_for('auth.login') }}" data-title="{{ video.title }}"
+    data-artist="{{ video.uploader.username }}"
+    data-thumbnail="{{ url_for('video.thumbnail', video_id=video.id, _external=True) if video.thumbnail_filename else (video.thumbnail_url if video.thumbnail_url else '') }}"
+    data-is-local="{{ 'true' if is_local else 'false' }}"
+    data-video-mime="{{ video.video_mime | default('') }}"
+    data-audio-mime="{{ video.audio_mime | default('') }}"
+    data-audio-url="{% if not is_local and video.audio_url %}{{ url_for('video.proxy_stream', url=video.audio_url, vd=video.visitor_data|default('', true)) }}{% endif %}"
+    data-video-url="{% if not is_local %}{{ url_for('video.proxy_stream', url=video.stream_url, vd=video.visitor_data|default('', true)) }}{% endif %}"
+>
+</div>
+
+<div id="sponsor-blocks-data" style="display: none;">
+    {% if is_local %}
+    {% for sb in video.sponsor_blocks %}
+    <div class="sponsor-block-item" data-start="{{ sb.start_time }}" data-end="{{ sb.end_time }}"
+        data-category="{{ sb.category }}"></div>
+    {% endfor %}
+    {% endif %}
+</div>
+
+<script>
+    const player = document.getElementById('vanced-player');
+    const audioPlayer = document.getElementById('vanced-audio');
+    const skipToast = document.getElementById('skip-toast');
+    const videoDataNode = document.getElementById('video-data');
+
+    // ── MSE Player (MediaSource Extensions) ──────────────────────────────────
+    // How YouTube plays HD: it creates ONE MediaSource timeline and feeds
+    // separate video + audio chunks into it so the browser's media engine
+    // keeps them frame-accurate — no drift possible.
+
+    let mseSession = null;   // active AdaptivePlayer instance
+    let mseLoading  = false;  // true while MSE is initializing (suppress spurious pause events)
+
+    class AdaptivePlayer {
+        constructor(videoEl, videoUrl, audioUrl, videoMime, audioMime) {
+            this.el        = videoEl;
+            this.videoUrl  = videoUrl;
+            this.audioUrl  = audioUrl;
+            this.videoMime = videoMime;
+            this.audioMime = audioMime;
+            this.ms        = null;
+            this.videoSB   = null;
+            this.audioSB   = null;
+            this.ctrl      = null;
+            this._blobUrl  = null;
+            // Seek support: cache the fMP4 init segment (ftyp+moov) so we can
+            // re-append it after any seek without re-downloading from the start.
+            this._initVideo = null;
+            this._initAudio = null;
+            this._videoClen = 0;   // content-length bytes (from YouTube URL)
+            this._audioClen = 0;
+            this._dur       = 0;   // duration seconds (from YouTube URL)
+        }
+
+        isSupported() {
+            const vMod = MediaSource.isTypeSupported(this.videoMime);
+            const aMod = MediaSource.isTypeSupported(this.audioMime);
+            console.log(`[MSE] Support: Video=${vMod} Audio=${aMod}`);
+            return !!(window.MediaSource && vMod && aMod);
+        }
+
+        async start() {
+            if (!this.isSupported()) {
+                console.warn('[MSE] Not supported, falling back');
+                return false;
+            }
+            this.ms = new MediaSource();
+            this._blobUrl = URL.createObjectURL(this.ms);
+            this.el.src = this._blobUrl;
+
+            await new Promise(r => this.ms.addEventListener('sourceopen', r, {once: true}));
+            console.log('[MSE] MediaSource opened');
+
+            try {
+                this.videoSB = this.ms.addSourceBuffer(this.videoMime);
+                this.audioSB = this.ms.addSourceBuffer(this.audioMime);
+                // 'segments' mode allows appending non-sequential fragments after seek
+                this.videoSB.mode = 'segments';
+                this.audioSB.mode = 'segments';
+            } catch(e) {
+                console.error('[MSE] addSourceBuffer failed:', e);
+                return false;
+            }
+
+            this.ctrl = new AbortController();
+            mseLoading = false;
+            this._startStreams(0, 0);
+            this.el.addEventListener('seeking', () => this._onSeek());
+            return true;
+        }
+
+        _startStreams(videoOffset, audioOffset) {
+            let vDone = false, aDone = false;
+            const checkEnd = () => {
+                if (vDone && aDone && this.ms?.readyState === 'open') {
+                    try { this.ms.endOfStream(); } catch(e) {}
+                }
+            };
+            this._pump(this.videoUrl, this.videoSB, 'Video', videoOffset)
+                .then(() => { vDone = true; checkEnd(); });
+            this._pump(this.audioUrl, this.audioSB, 'Audio', audioOffset)
+                .then(() => { aDone = true; checkEnd(); });
+        }
+
+        // Extract content-length and duration from our proxy URL.
+        // Proxy URL format: /proxy/stream?url=ENCODEDYTURL&vd=...
+        // The inner YouTube URL contains ?clen=...&dur=... params.
+        _parseUrlMeta(proxyUrl) {
+            try {
+                const p    = new URLSearchParams(proxyUrl.split('?')[1] || '');
+                const inner = decodeURIComponent(p.get('url') || '');
+                const ip   = new URLSearchParams(inner.split('?')[1] || '');
+                return { clen: parseInt(ip.get('clen')||'0'), dur: parseFloat(ip.get('dur')||'0') };
+            } catch(e) { return { clen: 0, dur: 0 }; }
+        }
+
+        // Scan buffer for the byte offset of the first 'moof' box.
+        // Used to align pumped data to a fragment boundary after a seek.
+        _findMoofOffset(buf) {
+            const v = new DataView(buf);
+            for (let i = 0; i <= buf.byteLength - 8; i++) {
+                if (v.getUint8(i+4)===0x6d && v.getUint8(i+5)===0x6f &&
+                    v.getUint8(i+6)===0x6f && v.getUint8(i+7)===0x66) {
+                    const sz = v.getUint32(i);
+                    if (sz >= 8 && sz <= 0x40000) return i;
+                }
+            }
+            return -1;
+        }
+
+        // Find end of init segment (everything before first moof/mdat/sidx).
+        // fMP4 layout: [ftyp][moov] ... [moof][mdat] [moof][mdat] ...
+        _findInitEnd(buf) {
+            const v = new DataView(buf);
+            let pos = 0;
+            while (pos + 8 <= buf.byteLength) {
+                const sz   = v.getUint32(pos);
+                const type = String.fromCharCode(v.getUint8(pos+4),v.getUint8(pos+5),
+                                                  v.getUint8(pos+6),v.getUint8(pos+7));
+                if (type==='moof'||type==='mdat'||type==='sidx') return pos;
+                if (sz < 8 || pos+sz > buf.byteLength) break;
+                pos += sz;
+            }
+            return Math.min(pos, buf.byteLength);
+        }
+
+        // Core download pump.
+        // startByte=0 : normal play — downloads init first, then continues after it.
+        // startByte>0 : seek play — re-appends cached init, jumps to byte offset,
+        //               aligns to nearest moof box, then streams forward normally.
+        async _pump(url, sb, label, startByte) {
+            const signal  = this.ctrl.signal;
+            const INIT    = 65536;           // 64 KB initial fetch (covers ftyp+moov)
+            const CHUNK   = 2 * 1024 * 1024; // 2 MB per streaming chunk
+            const isVideo = label === 'Video';
+            try {
+                // ── Step 1: init segment ───────────────────────────────────────
+                let initData = isVideo ? this._initVideo : this._initAudio;
+
+                if (!initData) {
+                    // First run: fetch init segment and cache it
+                    const ir = await fetch(url, { signal, headers: {'Range':`bytes=0-${INIT-1}`} });
+                    if (!ir.ok && ir.status !== 206) throw new Error(`Init ${ir.status}`);
+                    const raw = await ir.arrayBuffer();
+
+                    const meta = this._parseUrlMeta(url);
+                    if (isVideo) this._videoClen = meta.clen;
+                    else         this._audioClen = meta.clen;
+                    if (meta.dur && !this._dur) this._dur = meta.dur;
+
+                    const initEnd = this._findInitEnd(raw);
+                    initData = raw.slice(0, initEnd);
+                    if (isVideo) this._initVideo = initData;
+                    else         this._initAudio = initData;
+                    console.log(`[MSE] ${label} init=${initEnd}B clen=${meta.clen} dur=${meta.dur}s`);
+
+                    await this._waitSB(sb);
+                    if (this.ms?.readyState !== 'open') return;
+                    sb.appendBuffer(initData);
+                    await this._waitSB(sb);
+                    // Normal play: begin streaming right after the init segment
+                    if (startByte === 0) startByte = initEnd;
+                } else {
+                    // Seek run: re-append cached init so decoder has codec context
+                    await this._waitSB(sb);
+                    if (this.ms?.readyState !== 'open') return;
+                    try { sb.appendBuffer(initData); await this._waitSB(sb); }
+                    catch(e) { console.warn(`[MSE] ${label} init re-append:`, e.message); }
+                }
+
+                // ── Step 2: stream from startByte ─────────────────────────────
+                let offset       = startByte;
+                let needAlignment = (startByte > 0); // seek-started pumps need moof alignment
+
+                while (true) {
+                    if (signal.aborted) break;
+                    const resp = await fetch(url, { signal,
+                        headers: {'Range': `bytes=${offset}-${offset+CHUNK-1}`} });
+                    if (!resp.ok && resp.status !== 206) {
+                        if (resp.status === 416) break; // EOF
+                        throw new Error(`HTTP ${resp.status}`);
+                    }
+                    let data = await resp.arrayBuffer();
+                    if (!data || data.byteLength === 0) break;
+                    if (signal.aborted) break;
+                    const rawLen = data.byteLength;
+
+                    // After a seek: skip bytes until we're at a moof box boundary
+                    if (needAlignment) {
+                        const at = this._findMoofOffset(data);
+                        if (at === -1) {
+                            console.warn(`[MSE] ${label} no moof @${offset}, advancing`);
+                            offset += rawLen;
+                            continue; // try next chunk
+                        }
+                        if (at > 0) {
+                            console.log(`[MSE] ${label} aligned: +${at}B to moof`);
+                            data = data.slice(at);
+                        }
+                        needAlignment = false;
+                    }
+
+                    await this._waitSB(sb);
+                    if (this.ms?.readyState !== 'open') break;
+                    try {
+                        sb.appendBuffer(data);
+                    } catch(e) {
+                        // Bad data alignment — skip chunk and re-align next time
+                        console.warn(`[MSE] ${label} append err @${offset}:`, e.message);
+                        offset += rawLen;
+                        needAlignment = true;
+                        continue;
+                    }
+                    offset += rawLen;
+                    if (rawLen < CHUNK) break; // EOF (partial response)
+                    await this._waitUntilBufferNeeded(sb);
+                    if (signal.aborted) break;
+                }
+                console.log(`[MSE] ${label} pump done @${offset}`);
+            } catch(e) {
+                if (e.name !== 'AbortError') console.warn(`[MSE] ${label} pump error:`, e);
+            }
+        }
+
+        async _waitUntilBufferNeeded(sb) {
+            return new Promise(resolve => {
+                const check = () => {
+                    if (this.ctrl?.signal.aborted) return resolve();
+                    const buf = sb.buffered;
+                    let end = 0;
+                    for (let i = 0; i < buf.length; i++) if (buf.end(i) > end) end = buf.end(i);
+                    if (end - this.el.currentTime < 20) return resolve();
+                    setTimeout(check, 1000);
+                };
+                check();
+            });
+        }
+
+        _waitSB(sb) {
+            return new Promise(r => {
+                if (!sb.updating) return r();
+                sb.addEventListener('updateend', r, {once: true});
+            });
+        }
+
+        async _onSeek() {
+            const t = this.el.currentTime;
+            // Already buffered? No action needed.
+            const buf = this.videoSB?.buffered;
+            if (buf) {
+                for (let i = 0; i < buf.length; i++)
+                    if (t >= buf.start(i) && t <= buf.end(i)) return;
+            }
+
+            console.log(`[MSE] Seek to ${t.toFixed(1)}s`);
+            if (this.ctrl) this.ctrl.abort();
+            this.ctrl = new AbortController();
+
+            const clearSB = async (sb) => {
+                if (!sb || this.ms?.readyState !== 'open') return;
+                await this._waitSB(sb);
+                if (sb.buffered.length > 0) { sb.remove(0, Infinity); await this._waitSB(sb); }
+            };
+            await Promise.all([clearSB(this.videoSB), clearSB(this.audioSB)]).catch(()=>{});
+            if (this.ctrl.signal.aborted) return;
+
+            // Estimate byte offset: (seekTime / totalDuration) * contentLength
+            // Subtract a margin to land BEFORE the target fragment (not after).
+            // YouTube fMP4 fragment ≈ 2s; at 720p (~2 Mbps) ≈ 500 KB/fragment.
+            // 1 MB margin = ~2 fragments before target → always land correctly.
+            let vOff = 0, aOff = 0;
+            if (this._dur > 0 && t > 3) {
+                if (this._videoClen > 0)
+                    vOff = Math.max(0, Math.floor((t/this._dur)*this._videoClen) - 1024*1024);
+                if (this._audioClen > 0)
+                    aOff = Math.max(0, Math.floor((t/this._dur)*this._audioClen) - 256*1024);
+            }
+            console.log(`[MSE] Seek offsets: video=${vOff} audio=${aOff}`);
+            this._startStreams(vOff, aOff);
+        }
+
+        destroy() {
+            if (this.ctrl) this.ctrl.abort();
+            if (this.ms && this.ms.readyState === 'open') {
+                try { this.ms.endOfStream(); } catch(e) {}
+            }
+            if (this._blobUrl) URL.revokeObjectURL(this._blobUrl);
+            this.el.removeAttribute('src');
+            this.el.load();
+        }
+    }
+
+
+    async function startMSE(videoUrl, audioUrl, videoMime, audioMime) {
+        if (mseSession) { mseSession.destroy(); mseSession = null; }
+        mseLoading = true;  // block pause events from polluting userPaused
+        mseSession = new AdaptivePlayer(player, videoUrl, audioUrl, videoMime, audioMime);
+        const ok = await mseSession.start();  // mseLoading cleared inside start()
+        if (!ok) {
+            mseLoading = false;
+            mseSession = null;
+            player.src = videoUrl;
+        }
+        return ok;
+    }
+
+    // ── Auto-start MSE on initial page load for YT adaptive streams ──────────
+    // When the server picks 720p or 1080p, it returns separate video+audio
+    // streams. The <source> tag has the video-only URL. We must initialize
+    // MSE immediately so the audio track gets attached from the start.
+    (async function initMSEIfNeeded() {
+        const isLocal = videoDataNode.getAttribute('data-is-local') === 'true';
+        const videoMime = videoDataNode.getAttribute('data-video-mime');
+        const audioMime = videoDataNode.getAttribute('data-audio-mime');
+        const audioUrl  = videoDataNode.getAttribute('data-audio-url');
+        const videoUrl  = videoDataNode.getAttribute('data-video-url');
+        if (!isLocal && videoUrl && audioUrl && videoMime && audioMime) {
+            console.log('[MSE] Auto-starting adaptive player for initial load');
+            // IMPORTANT: attach loadedmetadata listener BEFORE startMSE()
+            // because loadedmetadata may fire during the MSE pump before startMSE returns.
+            player.addEventListener('loadedmetadata', function onFirstLoad() {
+                player.play().catch(e => console.warn('[MSE] initial autoplay blocked:', e));
+                player.removeEventListener('loadedmetadata', onFirstLoad);
+            }, { once: true });
+            await startMSE(videoUrl, audioUrl, videoMime, audioMime);
+        }
+    })();
+
+
+    function hasAudioTrack() {
+        if (mseSession) return false;
+        const src = audioPlayer.getAttribute('src');
+        return src && src !== '';
+    }
+
+
+    // ── Media Session API (enables background playback on Android/iOS) ──────────
+    let userPaused = false;  // true only when USER explicitly pauses
+
+    player.addEventListener('play', () => { userPaused = false; });
+    player.addEventListener('pause', () => {
+        // Ignore pause events fired by MSE initialization (player.src = blobUrl triggers pause)
+        // Also ignore browser-forced background pauses. Only track real user pauses.
+        if (!document.hidden && !mseLoading) userPaused = true;
+    });
+
+    if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: videoDataNode.getAttribute('data-title'),
+            artist: videoDataNode.getAttribute('data-artist'),
+            album: 'YouTube Vanced',
+            artwork: [
+                { src: videoDataNode.getAttribute('data-thumbnail'), sizes: '512x512', type: 'image/jpeg' }
+            ]
+        });
+
+        // These handlers are REQUIRED for the browser to maintain an active media session
+        navigator.mediaSession.setActionHandler('play', () => { userPaused = false; player.play(); });
+        navigator.mediaSession.setActionHandler('pause', () => { userPaused = true; player.pause(); });
+        navigator.mediaSession.setActionHandler('stop', () => { userPaused = true; player.pause(); });
+        navigator.mediaSession.setActionHandler('seekforward', () => {
+            player.currentTime = Math.min(player.currentTime + 10, player.duration);
+        });
+        navigator.mediaSession.setActionHandler('seekbackward', () => {
+            player.currentTime = Math.max(player.currentTime - 10, 0);
+        });
+        navigator.mediaSession.setActionHandler('nexttrack', null);
+        navigator.mediaSession.setActionHandler('previoustrack', null);
+
+        // Keep mediaSession playback state in sync
+        player.addEventListener('play', () => { navigator.mediaSession.playbackState = 'playing'; });
+        player.addEventListener('pause', () => { navigator.mediaSession.playbackState = 'paused'; });
+    }
+
+    // ── Background Play: aggressive resume strategy ───────────────────────────────
+    // 1. visibilitychange — fire immediately on hide AND on show
+    document.addEventListener('visibilitychange', () => {
+        if (!userPaused && player.paused) {
+            // Whether the page just became hidden or visible, try to resume
+            player.play().catch(e => console.log('BG resume (visibilitychange):', e));
+        }
+    });
+
+    // 2. Heartbeat interval — runs every 300 ms while page is hidden
+    //    Chrome on desktop/Android sometimes delays the forced-pause by a few frames;
+    //    this catches it no matter when it happens.
+    setInterval(() => {
+        if (document.hidden && !userPaused && player.paused && !player.ended) {
+            player.play().catch(e => console.log('BG heartbeat resume:', e));
+            // Keep audio in sync too
+            if (hasAudioTrack() && audioPlayer.paused) {
+                audioPlayer.play().catch(() => { });
+            }
+        }
+    }, 300);
+
+    // Advanced Vanced Features
+    let sponsorBlocks = [];
+    document.querySelectorAll('.sponsor-block-item').forEach(el => {
+        sponsorBlocks.push({
+            start: parseFloat(el.getAttribute('data-start')),
+            end: parseFloat(el.getAttribute('data-end')),
+            category: el.getAttribute('data-category')
+        });
+    });
+
+    let enableSponsorBlock = true;
+
+    player.addEventListener('timeupdate', () => {
+        if (!enableSponsorBlock) return;
+        let cTime = player.currentTime;
+        for (let sb of sponsorBlocks) {
+            if (cTime >= sb.start && cTime < sb.end) {
+                // Skip segment
+                player.currentTime = sb.end;
+                showSkipToast(`Skipped ${sb.category} segment`);
+                break;
+            }
+        }
+    });
+
+    function showSkipToast(msg) {
+        skipToast.innerText = msg;
+        skipToast.style.opacity = '1';
+        setTimeout(() => { skipToast.style.opacity = '0'; }, 3000);
+    }
+
+    // PiP
+    async function togglePiP() {
+        try {
+            if (document.pictureInPictureElement) {
+                await document.exitPictureInPicture();
+            } else {
+                await player.requestPictureInPicture();
+            }
+        } catch (e) { console.error('PiP error:', e); alert('PiP not supported on this device/browser.'); }
+    }
+
+    // Menus
+    function toggleMenu(id) {
+        document.querySelectorAll('.v-menu').forEach(m => {
+            if (m.id !== id) m.classList.remove('show');
+        });
+        document.getElementById(id).classList.toggle('show');
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#v-controls') && !e.target.closest('.v-menu')) {
+            document.querySelectorAll('.v-menu').forEach(m => m.classList.remove('show'));
+        }
+    });
+
+    function setSpeed(sp) {
+        player.playbackRate = sp;
+        document.getElementById('current-s').innerText = sp + 'x';
+        document.getElementById('s-menu').classList.remove('show');
+    }
+
+    async function setQuality(q) {
+        document.getElementById('q-menu').classList.remove('show');
+
+        const curTime  = player.currentTime;
+        const isPaused = player.paused;
+        const videoId  = new URLSearchParams(window.location.search).get('v');
+        if (!videoId) return;
+
+        try {
+            player.style.opacity = '0.5';
+            const res  = await fetch(`/api/stream_url?v=${videoId}&q=${q}`);
+            const data = await res.json();
+
+            if (!data.url) {
+                console.error('Stream swap error:', data.error);
+                alert('This quality is not available for this video.');
+                return;
+            }
+
+            document.getElementById('current-q').innerText = data.actual_quality || q;
+
+            if (data.audio_url && data.video_mime && data.audio_mime) {
+                // ── 720p/1080p path: use MSE (separate video+audio) ────────────────────
+                // CRITICAL: attach loadedmetadata listener BEFORE startMSE().
+                // MSE fires loadedmetadata from inside the pump (async, before startMSE returns).
+                // If we add the listener after await startMSE(), the event is already gone.
+                //
+                // Also: do NOT restore curTime here. Setting currentTime on a fresh
+                // MSE session triggers _onSeek() which clears all source buffers and
+                // restarts the pump from byte 0 — but the player is seeked to curTime
+                // (e.g., 48s). The pump won't reach second 48 for a long time, so the
+                // video appears completely frozen and play button does nothing.
+                player.addEventListener('loadedmetadata', function onQualitySwitch() {
+                    // For non-zero positions: let user seek manually after quality loads.
+                    // For zero (video just started): this is fine as-is.
+                    if (!isPaused) player.play().catch(e => console.warn('[MSE] play failed:', e));
+                    player.removeEventListener('loadedmetadata', onQualitySwitch);
+                }, { once: true });
+                await startMSE(data.url, data.audio_url, data.video_mime, data.audio_mime);
+            } else {
+                // ── 720p path: combined stream, just set src ─────────────────────
+                if (mseSession) { mseSession.destroy(); mseSession = null; }
+                audioPlayer.removeAttribute('src');
+
+                player.querySelectorAll('source').forEach(s => s.remove());
+                player.src = data.url;
+                player.load();
+
+                player.addEventListener('loadedmetadata', function restoreTime() {
+                    player.currentTime = curTime;
+                    if (!isPaused) player.play().catch(() => {});
+                    player.removeEventListener('loadedmetadata', restoreTime);
+                });
+            }
+        } catch (e) {
+            console.error('Failed to swap quality', e);
+        } finally {
+            player.style.opacity = '1';
+        }
+    }
+
+    // Testing mockup endpoint
+    function addMockSponsorBlock() {
+        if (!player.duration || player.duration < 15) {
+            alert("Video must be longer than 15s to add a mock block");
+            return;
+        }
+        let cur = player.currentTime;
+        sponsorBlocks.push({ start: cur, end: cur + 10, category: 'Sponsor (Mock)' });
+        alert(`Mock SponsorBlock added from ${cur.toFixed(1)}s to ${(cur + 10).toFixed(1)}s. Rewind and let it play to test skipping!`);
+    }
+
+    // Like functionality
+    const likeBtnToggle = document.getElementById('like-btn-toggle');
+    if (likeBtnToggle) {
+        likeBtnToggle.addEventListener('click', function () {
+            const videoId = this.getAttribute('data-video-id');
+            const isAuthenticated = videoDataNode.getAttribute('data-is-authenticated') === 'true';
+
+            if (isAuthenticated) {
+                fetch(`/like/${videoId}`, { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        const count = document.getElementById('like-count');
+
+                        if (data.status === 'success') {
+                            if (data.message === 'liked') {
+                                this.classList.add('active');
+                            } else {
+                                this.classList.remove('active');
+                            }
+                            count.innerText = data.likes;
+                        }
+                    });
+            } else {
+                window.location.href = videoDataNode.getAttribute('data-login-url');
+            }
+        });
+    }
+    // Share functionality
+    function shareVideo() {
+        if (navigator.share) {
+            navigator.share({
+                title: videoDataNode.getAttribute('data-title'),
+                text: 'Check out this video on YouTube Vanced!',
+                url: window.location.href
+            }).catch(console.error);
+        } else {
+            // Fallback
+            navigator.clipboard.writeText(window.location.href);
+            alert('Link copied to clipboard!');
+        }
+    }
+</script>
+{% endblock %}

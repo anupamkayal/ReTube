@@ -1,0 +1,24 @@
+{
+  "short_name": "Vanced",
+  "name": "YouTube Vanced Clone",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/static/icons/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0f0f0f",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#0f0f0f",
+  "description": "YouTube client built with Flask.",
+  "orientation": "portrait"
+}

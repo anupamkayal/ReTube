@@ -1,0 +1,14 @@
+﻿flask
+flask-sqlalchemy
+flask-login
+flask-bcrypt
+flask-cors
+python-dotenv
+requests
+werkzeug
+gunicorn
+innertube
+pytubefix
+yt-dlp
+yt-dlp-get-pot-rustypipe
+gevent
