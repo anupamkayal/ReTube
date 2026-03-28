@@ -3,7 +3,11 @@ import requests
 import innertube
 from pytubefix import YouTube
 import subprocess
+import os
+import stat
 bg_path = "/app/rustypipe-botguard"
+st = os.stat(bg_path)
+os.chmod(bg_path, st.st_mode | stat.S_IEXEC)
 # ---------------------------------------------------------------------------
 # Patch innertube package config: remove stale API keys from Android/iOS clients.
 # The package sends ?key=AIzaSy... to youtubei.googleapis.com, which YouTube now
