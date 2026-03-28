@@ -78,8 +78,10 @@ def _innertube_get_stream(video_id, quality=None):
                         "client": {
                             "clientName": client_name,
                             "clientVersion": "21.05.46",
-                            "serviceIntegrityDimensions" : PO_TOKEN,
                             "visitorData": VISITOR_DATA, # CRITICAL FOR GUEST MODE
+                        },
+                         "serviceIntegrityDimensions": {
+                            "poToken": PO_TOKEN,  # PO token passed here as required by YouTube
                         },
                         
                     }
