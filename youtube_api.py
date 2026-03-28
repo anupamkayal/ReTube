@@ -5,6 +5,7 @@ from pytubefix import YouTube
 import subprocess
 import os
 import stat
+import platform
 bg_path = "/app/rustypipe-botguard"
 st = os.stat(bg_path)
 os.chmod(bg_path, st.st_mode | stat.S_IEXEC)
@@ -26,6 +27,41 @@ try:
             
 except Exception as _e:
     print(f"[Innertube] Config patch failed: {str(_e)}")
+
+def repair_botguard_binary():
+    arch = platform.machine() # Detects if you are on x86_64 or ARM
+    
+    # We use the bgutil-pot-provider which is the 2026 standard for yt-dlp
+    base_url = "https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/latest/download/"
+    
+    if arch == "x86_64":
+        url = base_url + "bgutil-pot-linux-x86_64"
+    else:
+        url = base_url + "bgutil-pot-linux-aarch64"
+
+    print(f"[System] Detected architecture: {arch}")
+    print(f"[System] Downloading correct binary from: {url}")
+
+    try:
+        # 1. Download the file directly to the container
+        r = requests.get(url, allow_redirects=True, timeout=30)
+        if r.status_code == 200:
+            with open(bg_path, "wb") as f:
+                f.write(r.content)
+            
+            # 2. Fix the "Permission Denied" (chmod +x)
+            st = os.stat(bg_path)
+            os.chmod(bg_path, st.st_mode | stat.S_IEXEC)
+            
+            print("Successfully installed and set permissions.")
+            return True
+        else:
+            print(f"Failed to download. HTTP Status: {r.status_code}")
+            return False
+    except Exception as e:
+        print(f"Repair failed: {e}")
+        return False
+
 
 
 def get_safe_session():
@@ -54,6 +90,10 @@ def _innertube_get_stream(video_id, quality=None):
     # ANDROID_TESTSUITE → test client, URLs usually have no spc/rqh protection
     # ANDROID_UNPLUGGED / ANDROID_LITE → YouTube TV / Go variants, usually no PO token
     # ANDROID/IOS (patched, no api_key) → direct unsigned HD URLs for most videos
+    if os.path.exists(bg_path) == False:
+        print("running PO_TOKEN generator binary download")
+        repair_botguard_binary()
+        
     yt = YouTube(f'https://www.youtube.com/watch?v={video_id}', use_po_token=True)
     result = subprocess.run([bg_path, video_id], capture_output=True, text=True, check=True)
     
@@ -63,10 +103,9 @@ def _innertube_get_stream(video_id, quality=None):
     PO_TOKEN = generated_token
     print(f"Successfully captured PoToken: {PO_TOKEN}")
     print(result.stdout.strip())
-    print(f"PoToken: {yt.po_token}")
     print(f"VisitorData: {yt.visitor_data}")
 
-    PO_TOKEN = "MnjGxQIIPDT8Wcb5Uuyi6bS0qfSaZpfO16DhnsZjywjOAqMD1ICiQC3De7k3eb35lx0ieiliAAXws6Ixc-HZ0cCAYFP-Rmr47BIpEvR2Pnhqo5G-0o8ql8sBVqVecg3m23I2IDALEWbppqYyGLFiAmx1my9fLLXw2e8="
+    #PO_TOKEN = "MnjGxQIIPDT8Wcb5Uuyi6bS0qfSaZpfO16DhnsZjywjOAqMD1ICiQC3De7k3eb35lx0ieiliAAXws6Ixc-HZ0cCAYFP-Rmr47BIpEvR2Pnhqo5G-0o8ql8sBVqVecg3m23I2IDALEWbppqYyGLFiAmx1my9fLLXw2e8="
     VISITOR_DATA = yt.visitor_data
     for client_name in ("ANDROID_TESTSUITE", "ANDROID_UNPLUGGED", "ANDROID_LITE", "ANDROID", "IOS"):
         try:
