@@ -78,7 +78,7 @@ def _innertube_get_stream(video_id, quality=None):
                         "client": {
                             "clientName": client_name,
                             "clientVersion": "21.05.46",
-                            "serviceIntegrityDimensions" : PO_TOKEN
+                            "serviceIntegrityDimensions" : PO_TOKEN,
                             "visitorData": VISITOR_DATA, # CRITICAL FOR GUEST MODE
                         },
                         
